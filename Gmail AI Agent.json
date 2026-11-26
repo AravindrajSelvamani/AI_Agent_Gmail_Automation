@@ -1,0 +1,223 @@
+{
+  "name": "Gmail AI Agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -112
+      ],
+      "id": "09a50c13-fb1e-4804-a869-b1cb3a5702bf",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 5,
+        "filters": {
+          "readStatus": "unread"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -96,
+        -112
+      ],
+      "id": "6570f46f-851b-41b3-bd48-d483800cdf8f",
+      "name": "Get many messages",
+      "webhookId": "5714edcf-573d-4fef-a55d-85755d47baed",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SPJNl4WuralISD8A",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write ONE line (20 words maximum) describing this email.\nNo greeting, no heading, no extra text.\nFrom: {{ $json.From }}  Subject: {{ $json.Subject }}\nPreview: {{ $json.snippet }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        128,
+        -112
+      ],
+      "id": "45ff7730-bf67-4588-bb04-29f788adc9db",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        96
+      ],
+      "id": "fa4d9bdf-cdf8-4a36-93c1-e74fb966a544",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "h3gzrvDcRmCyUGDR",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        144,
+        96
+      ],
+      "id": "d7f78a13-1572-4e1e-8c6b-52ebf6be8484",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        496,
+        -112
+      ],
+      "id": "1d15eed6-031b-41e5-abc1-33dc76552e78",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "sendTo": "aravindraj088@gmail.com",
+        "subject": "Latest Unread Mail Summaries",
+        "emailType": "text",
+        "message": "={{ $json.output.join('\\n\\n') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        -112
+      ],
+      "id": "153ffcb6-e61a-4289-a7e0-7dc283b78de6",
+      "name": "Send a message",
+      "webhookId": "f574e3cc-1fcf-4a5b-ae0e-c4eba2fab926",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SPJNl4WuralISD8A",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3a4edb02-c729-42b1-babf-98d8e88db3dc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c47af9147b7cf8977fcd193fba2e405fae52c6fe218bc10b15514e8306e0ca20"
+  },
+  "nodeGroups": [],
+  "id": "V8tO96PLJz5VIXB8",
+  "tags": []
+}
